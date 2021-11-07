@@ -28,12 +28,19 @@ def assess_features(X, y, feature_names):
     clf.fit(X, y)
     feature_importances = clf.feature_importances_
 
+    legend = {idx: feature for idx, feature in enumerate(feature_names)}
+    with open('charts/legend.json', 'w') as legend_file:
+        json.dump(legend, legend_file)
+
     print('Feature Importance based on Decision Tree')
     for idx, val in enumerate(feature_importances):
         print(feature_names[idx], val)
     plt.bar(list(range(len(feature_importances))), feature_importances)
-    plt.xticks(list(range(len(feature_importances))), feature_names)
+    plt.xticks(list(range(len(feature_importances))),
+               list(range(len(feature_importances))))
+    # plt.xticks(list(range(len(feature_importances))), feature_names)
     plt.title('Feature Importance based on Decision Tree')
+    plt.savefig('charts/Feature Importance based on Decision Tree.png')
     plt.show()
     print()
 
@@ -45,8 +52,11 @@ def assess_features(X, y, feature_names):
     for idx, val in enumerate(feature_importances):
         print(feature_names[idx], val)
     plt.bar(list(range(len(feature_importances))), feature_importances)
-    plt.xticks(list(range(len(feature_importances))), feature_names)
+    plt.xticks(list(range(len(feature_importances))),
+               list(range(len(feature_importances))))
+    # plt.xticks(list(range(len(feature_importances))), feature_names)
     plt.title('Feature Importance based on Random Forest')
+    plt.savefig('charts/Feature Importance based on Random Forest.png')
     plt.show()
 
 
