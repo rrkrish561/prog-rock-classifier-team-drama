@@ -7,9 +7,9 @@ from sklearn.model_selection import train_test_split
 
 
 LEARNING_RATE = 1e-6
-NUM_EPOCHS = 10
-BATCH_SIZE = 1
-HEIGHT, WIDTH = 500, 500
+NUM_EPOCHS = 50
+BATCH_SIZE = 32
+HEIGHT, WIDTH = 128, 646
 
 
 class SpectralContrastCNN(torch.nn.Module):
@@ -60,7 +60,7 @@ if __name__ == '__main__':
     print('Finished preprocessing!')
 
     X_train, X_test, y_train, y_test = train_test_split(
-        X, y, test_size=0.7, random_state=11)
+        X, y, test_size=0.3, random_state=42)
 
     X_train = torch.autograd.Variable(torch.from_numpy(X_train)).float()
     y_train = torch.autograd.Variable(torch.from_numpy(y_train)).float()
@@ -88,7 +88,13 @@ if __name__ == '__main__':
 
             outputs = net(inputs)
             # outputs = np.squeeze(outputs)
-            outputs = torch.squeeze(outputs, dim=0)
+            if BATCH_SIZE == 1:
+                outputs = torch.squeeze(outputs, dim=0)
+            else:
+                try:
+                    outputs = torch.squeeze(outputs)
+                except:
+                    outputs = torch.squeeze(outputs, dim=0)
 
             # print(outputs, outputs.size())
             # print(labels, labels.size())
@@ -113,13 +119,19 @@ if __name__ == '__main__':
             outputs = net(inputs)
 
             outputs = outputs.detach().numpy()
-            y_pred = np.argmax(outputs, axis=1)
 
-            if y_pred[0] == labels.item():
+            y_pred = np.squeeze(outputs)
+            if y_pred < 0.5:
+                y_pred = 0
+            else:
+                y_pred = 1
+
+            if y_pred == labels.item():
                 correct += 1
             total += 1
 
-            predictions.append(y_pred[0])
+            predictions.append(y_pred)
             actuals.append(labels.item())
 
+    print(predictions)
     print('Accuracy:', float(correct) / float(total))
