@@ -8,7 +8,7 @@ from keras.layers import LSTM
 from keras.layers import Dense
 from sklearn.preprocessing import MinMaxScaler
 
-INFILE = ""
+INFILE = r'C:\uf-programming\cis4930\processed-datasets\mfcc\mfcc_pickle'
 OUTFILE = ""
 
 # 'nonprog' or 'prog', depending
@@ -49,40 +49,42 @@ memory_datastore = {
 
 mfcc = pickle.load( open(INFILE, 'rb') )
 
-UNITS = 200 # LSTM hidden unit count
-
-# Get number of songs for progress indication
-song_count = len(mfcc[KEY])
-
-# Train an LSTM on each song, store the weights in pickle file
-for idx, song_name in enumerate(mfcc[KEY].keys()):
-    print("Processing {}/{}".format(idx + 1, song_count))
-
-    dataset = create_dataset(mfcc[KEY], song_name)
-
-    n_steps = 3
-    X, y = split_sequences(dataset, n_steps)
-    n_features = X.shape[2] # 20 MFCC coefficients
-
-    # Define model
-    model = Sequential()
-    model.add(
-        LSTM(
-            UNITS,
-            activation='relu',
-            input_shape=(n_steps, n_features)
-        )
-    )
-    model.add(Dense(n_features))
-    model.compile(optimizer='adam', loss='mse')
-
-    # Fit model. # 5 epochs seem to be convergence spot
-    history = model.fit(X, y, epochs=5)
-
-    W = model.layers[0].get_weights()[0]
-    U = model.layers[0].get_weights()[1]
-
-    memory_datastore[song_name] = { 'W': W, 'U': U }
 
 
-pickle.dump(memory_datastore, open(OUTFILE, 'wb'))
+# UNITS = 200 # LSTM hidden unit count 
+
+# # Get number of songs for progress indication
+# song_count = len(mfcc[KEY])
+
+# # Train an LSTM on each song, store the weights in pickle file
+# for idx, song_name in enumerate(mfcc[KEY].keys()):
+#     print("Processing {}/{}".format(idx + 1, song_count))
+
+#     dataset = create_dataset(mfcc[KEY], song_name)
+
+#     n_steps = 3
+#     X, y = split_sequences(dataset, n_steps)
+#     n_features = X.shape[2] # 20 MFCC coefficients
+
+#     # Define model
+#     model = Sequential()
+#     model.add(
+#         LSTM(
+#             UNITS,
+#             activation='relu',
+#             input_shape=(n_steps, n_features)
+#         )
+#     )
+#     model.add(Dense(n_features))
+#     model.compile(optimizer='adam', loss='mse')
+
+#     # Fit model. # 5 epochs seem to be convergence spot
+#     history = model.fit(X, y, epochs=5)
+
+#     W = model.layers[0].get_weights()[0]
+#     U = model.layers[0].get_weights()[1]
+
+#     memory_datastore[song_name] = { 'W': W, 'U': U }
+
+
+# pickle.dump(memory_datastore, open(OUTFILE, 'wb'))
