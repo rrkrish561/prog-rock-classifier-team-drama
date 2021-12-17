@@ -14,22 +14,34 @@ import tensorflow as tf
 from tensorflow import keras
 from tensorflow.keras import layers
 
+from sklearn.metrics import confusion_matrix
+
+PROG_INFILE = r'./lstm/lstm_embeddings_prog'
+NON_PROG_INFILE = r'./lstm/lstm_embeddings_nonprog'
+
+prog = pickle.load(open(PROG_INFILE, 'rb'))
+non_prog = pickle.load(open(NON_PROG_INFILE, 'rb'))
+
+print(len(prog))
+print(len(non_prog))
+type(prog)
+
 # Paths of LSTM weight pickle files
-TRAIN_PROG_MEMORY_PATH = ""
-TRAIN_NON_PROG_MEMORY_PATH = ""
+# TRAIN_PROG_MEMORY_PATH = ""
+# TRAIN_NON_PROG_MEMORY_PATH = ""
 
-TEST_PROG_MEMORY_PATH = ""
-TEST_NON_PROG_MEMORY_PATH = ""
-TEST_OTHER_MEMORY_PATH = ""
+# TEST_PROG_MEMORY_PATH = ""
+# TEST_NON_PROG_MEMORY_PATH = ""
+# TEST_OTHER_MEMORY_PATH = ""
 
-WEIGHT_MATRIX = 'W'
+WEIGHT_MATRIX = 'U'
 
-train_prog    = pickle.load( open(TRAIN_PROG_MEMORY_PATH, 'rb') )
-train_nonprog = pickle.load( open(TRAIN_NON_PROG_MEMORY_PATH, 'rb') )
-test_prog     = pickle.load( open(TEST_PROG_MEMORY_PATH, 'rb') )
-test_nonprog  = pickle.load( open(TEST_NON_PROG_MEMORY_PATH, 'rb') )
+train_prog = dict(list(prog.items())[:70])
+train_nonprog = dict(list(non_prog.items())[:63])
+test_prog = dict(list(prog.items())[70:])
+test_nonprog = dict(list(non_prog.items())[63:])
 
-test_other    = pickle.load( open(TEST_OTHER_MEMORY_PATH, 'rb') )
+#test_other    = pickle.load( open(TEST_OTHER_MEMORY_PATH, 'rb') )
 
 # Set seeds for reproducibility
 np.random.seed(42)
@@ -48,6 +60,7 @@ BANISHED_LIST = [
     "02. Bleed (live)",
 ]
 
+
 def build_dataset(prog_set, nonprog_set, weight_matrix, train=True):
     X = []
 
@@ -55,54 +68,62 @@ def build_dataset(prog_set, nonprog_set, weight_matrix, train=True):
         if song_name not in BANISHED_LIST:
             X.append(prog_set[song_name][weight_matrix])
         else:
-          print("Banished song detected! |{}|".format(song_name))
+            print("Banished song detected! |{}|".format(song_name))
 
     for song_name in list(nonprog_set):
         X.append(nonprog_set[song_name][weight_matrix])
 
     if train:
-        y = np.append(np.ones(len(prog_set) - len(BANISHED_LIST)), np.zeros(len(nonprog_set)))
+        y = np.append(np.ones(len(prog_set)), np.zeros(len(nonprog_set)))
     else:
         y = np.append(np.ones(len(prog_set)), np.zeros(len(nonprog_set)))
 
     return np.array(X), y
 
+
 # Build training, test sets
 X_train, y_train = build_dataset(train_prog, train_nonprog, WEIGHT_MATRIX)
-X_test, y_test = build_dataset(test_prog, test_nonprog, WEIGHT_MATRIX, train=False)
+X_test, y_test = build_dataset(
+    test_prog, test_nonprog, WEIGHT_MATRIX, train=False)
 
 # Expand dimensions for classifier
 X_train = np.expand_dims(X_train, -1)
 X_test = np.expand_dims(X_test, -1)
 
 
-input_shape = (20, 800, 1)
+input_shape = (200, 800, 1)
 reg_const = 0.005
 
 class_weights = {0: 1.0, 1: 1.5}
 
+
 model = keras.Sequential(
- [
-       keras.Input(shape=input_shape),
-       layers.Conv2D(8, 6, activation="relu", kernel_regularizer=keras.regularizers.l2(reg_const)),
-       layers.MaxPooling2D(2),
-       layers.Conv2D(16, 4, activation="relu", kernel_regularizer=keras.regularizers.l2(reg_const)),
-       layers.MaxPooling2D(2),
-       layers.Conv2D(32, 4, activation="relu", kernel_regularizer=keras.regularizers.l2(reg_const)),
-       layers.Flatten(),
-       layers.Dense(1024),
-       layers.Dropout(0.5),
-       layers.Dense(256),
-      layers.Dense(1, activation="sigmoid"),
-   ]
+    [
+        keras.Input(shape=input_shape),
+        layers.Conv2D(8, 6, activation="relu",
+                      kernel_regularizer=keras.regularizers.l2(reg_const)),
+        layers.MaxPooling2D((2, 2), (2, 2)),
+        layers.Conv2D(16, 4, activation="relu",
+                      kernel_regularizer=keras.regularizers.l2(reg_const)),
+        layers.MaxPooling2D((2, 2), (2, 2)),
+        layers.Conv2D(32, 4, activation="relu",
+                      kernel_regularizer=keras.regularizers.l2(reg_const)),
+        layers.Flatten(),
+        layers.Dense(1024),
+        layers.Dropout(0.5),
+        layers.Dense(256),
+        layers.Dense(1, activation="sigmoid"),
+    ]
 )
 
-model.compile(loss="binary_crossentropy", optimizer="adam", metrics=['accuracy'])
+model.compile(loss="binary_crossentropy",
+              optimizer="adam", metrics=['accuracy'])
 
 batch_size = 32
 epochs = 50
 
-history = model.fit(X_train, y_train, batch_size=batch_size, class_weight=class_weights, epochs=epochs, validation_split=0.2)
+history = model.fit(X_train, y_train, batch_size=batch_size,
+                    class_weight=class_weights, epochs=epochs, validation_split=0.2)
 score = model.evaluate(X_test, y_test)
 print("Test loss:", score[0])
 print("Test accuracy:", score[1])
@@ -112,7 +133,6 @@ plt.plot(history.history['val_accuracy'])
 plt.legend(['train', 'val'])
 
 y_pred = model.predict(X_test)
-
 
 
 # Plot confusion matrix
@@ -135,6 +155,6 @@ plt.title("Test Set")
 thresh = cm.max() / 2.
 for i, j in itertools.product(range(cm.shape[0]), range(cm.shape[1])):
     ax.text(j, i, format(cm[i, j], 'd'),
-    horizontalalignment="center",
-    fontsize=11,
-    color="white" if cm[i, j] > thresh else "black")
+            horizontalalignment="center",
+            fontsize=11,
+            color="white" if cm[i, j] > thresh else "black")
