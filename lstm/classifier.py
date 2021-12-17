@@ -16,32 +16,22 @@ from tensorflow.keras import layers
 
 from sklearn.metrics import confusion_matrix
 
-PROG_INFILE = r'./lstm/lstm_embeddings_prog'
-NON_PROG_INFILE = r'./lstm/lstm_embeddings_nonprog'
+TRAIN_PROG_INFILE = r'./lstm/lstm_embeddings/lstm_embeddings_prog_train'
+TEST_PROG_INFILE = r'./lstm/lstm_embeddings/lstm_embeddings_prog_test'
+TRAIN_NONPROG_INFILE = r'./lstm/lstm_embeddings/lstm_embeddings_nonprog_train'
+TEST_NONPROG_INFILE = r'./lstm/lstm_embeddings/lstm_embeddings_nonprog_test'
 
-prog = pickle.load(open(PROG_INFILE, 'rb'))
-non_prog = pickle.load(open(NON_PROG_INFILE, 'rb'))
-
-print(len(prog))
-print(len(non_prog))
-type(prog)
-
-# Paths of LSTM weight pickle files
-# TRAIN_PROG_MEMORY_PATH = ""
-# TRAIN_NON_PROG_MEMORY_PATH = ""
-
-# TEST_PROG_MEMORY_PATH = ""
-# TEST_NON_PROG_MEMORY_PATH = ""
-# TEST_OTHER_MEMORY_PATH = ""
+train_prog = pickle.load(open(TRAIN_PROG_INFILE, 'rb'))
+train_nonprog = pickle.load(open(TRAIN_NONPROG_INFILE, 'rb'))
+test_prog = pickle.load(open(TEST_PROG_INFILE, 'rb'))
+test_nonprog = pickle.load(open(TEST_NONPROG_INFILE, 'rb'))
 
 WEIGHT_MATRIX = 'U'
 
-train_prog = dict(list(prog.items())[:70])
-train_nonprog = dict(list(non_prog.items())[:63])
-test_prog = dict(list(prog.items())[70:])
-test_nonprog = dict(list(non_prog.items())[63:])
-
-#test_other    = pickle.load( open(TEST_OTHER_MEMORY_PATH, 'rb') )
+train_prog = dict(list(train_prog.items()))
+train_nonprog = dict(list(train_nonprog.items()))
+test_prog = dict(list(test_prog.items()))
+test_nonprog = dict(list(test_nonprog.items()))
 
 # Set seeds for reproducibility
 np.random.seed(42)
@@ -78,7 +68,13 @@ def build_dataset(prog_set, nonprog_set, weight_matrix, train=True):
     else:
         y = np.append(np.ones(len(prog_set)), np.zeros(len(nonprog_set)))
 
-    return np.array(X), y
+    X = np.array(X)
+    y = np.array(y)
+    shuffler = np.random.permutation(len(y))
+    X = X[shuffler]
+    y = y[shuffler]
+
+    return X, y
 
 
 # Build training, test sets
@@ -100,18 +96,21 @@ class_weights = {0: 1.0, 1: 1.5}
 model = keras.Sequential(
     [
         keras.Input(shape=input_shape),
-        layers.Conv2D(8, 6, activation="relu",
+        layers.Conv2D(8, 6, activation="relu",  # kernel_initializer='he_normal',
                       kernel_regularizer=keras.regularizers.l2(reg_const)),
-        layers.MaxPooling2D((2, 2), (2, 2)),
+        layers.MaxPooling2D(2, 2),
+        # layers.Dropout(0.5),
         layers.Conv2D(16, 4, activation="relu",
                       kernel_regularizer=keras.regularizers.l2(reg_const)),
-        layers.MaxPooling2D((2, 2), (2, 2)),
+        layers.MaxPooling2D(2, 2),
+        layers.Dropout(0.5),
         layers.Conv2D(32, 4, activation="relu",
                       kernel_regularizer=keras.regularizers.l2(reg_const)),
         layers.Flatten(),
         layers.Dense(1024),
         layers.Dropout(0.5),
         layers.Dense(256),
+        # layers.Dropout(0.1),
         layers.Dense(1, activation="sigmoid"),
     ]
 )
@@ -119,11 +118,13 @@ model = keras.Sequential(
 model.compile(loss="binary_crossentropy",
               optimizer="adam", metrics=['accuracy'])
 
+print(model.summary())
+
 batch_size = 32
-epochs = 50
+epochs = 40
 
 history = model.fit(X_train, y_train, batch_size=batch_size,
-                    class_weight=class_weights, epochs=epochs, validation_split=0.2)
+                    class_weight=class_weights, epochs=epochs, validation_split=0.3)
 score = model.evaluate(X_test, y_test)
 print("Test loss:", score[0])
 print("Test accuracy:", score[1])
@@ -131,6 +132,7 @@ print("Test accuracy:", score[1])
 plt.plot(history.history['accuracy'])
 plt.plot(history.history['val_accuracy'])
 plt.legend(['train', 'val'])
+plt.show()
 
 y_pred = model.predict(X_test)
 
