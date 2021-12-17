@@ -31,7 +31,7 @@ X_test = X_test[[0, 2, 14, 23, 28, 34, 40]]
 tf.random.set_seed(0)
 
 X_train, X_val, Y_train, Y_val = train_test_split(
-    X, Y, test_size=0.3, random_state=42)
+    X, Y, test_size=0.3, random_state=1)
 
 Y_train = to_categorical(Y_train)
 Y_val = to_categorical(Y_val)
@@ -79,17 +79,26 @@ modelDNN.evaluate(X_test, Y_test)
 
 pred_train = modelDNN.predict_classes(X_train)
 pred_val = modelDNN.predict_classes(X_val)
+pred_test = modelDNN.predict_classes(X_test)
 
 cm0 = confusion_matrix(np.argmax(Y_train, axis=1), pred_train)
 fig0 = plt.figure()
 sns.heatmap(cm0, annot=True)
+plt.savefig('./data/charts/eDNN NoMod Train CM.png')
 plt.show()
 
 cm1 = confusion_matrix(np.argmax(Y_val, axis=1), pred_val)
 fig1 = plt.figure()
 sns.heatmap(cm1, annot=True)
+plt.savefig('./data/charts/eDNN NoMod Val CM.png')
 plt.show()
 
-explainer = shap.DeepExplainer(modelDNN, X_train)
-shap_values = explainer.shap_values(X_val)
-shap.summary_plot(shap_values, X_val, plot_type="bar", max_display=32)
+cm2 = confusion_matrix(np.argmax(Y_val, axis=1), pred_val)
+fig2 = plt.figure()
+sns.heatmap(cm2, annot=True)
+plt.savefig('./data/charts/eDNN NoMod Test CM.png')
+plt.show()
+
+# explainer = shap.DeepExplainer(modelDNN, X_train)
+# shap_values = explainer.shap_values(X_val)
+# shap.summary_plot(shap_values, X_val, plot_type="bar", max_display=32)
