@@ -19,8 +19,12 @@ from tensorflow.keras.utils import to_categorical
 tf.get_logger().setLevel('ERROR')
 
 # %%
-X = pd.read_json('./data/features-and-labels/X.json')
-Y = pd.read_json('./data/features-and-labels/y.json')
+X = pd.read_json('./dnn/X.json')
+Y = pd.read_json('./dnn/y.json')
+X_test = pd.read_json('./data/features-and-labels/X_test.json')
+Y_test = pd.read_json('./data/features-and-labels/y_test.json')
+
+X_test = X_test.iloc[:, :32]
 
 # %%
 tf.random.set_seed(0)
@@ -30,8 +34,11 @@ X_train, X_val, Y_train, Y_val = train_test_split(
 
 Y_train = to_categorical(Y_train)
 Y_val = to_categorical(Y_val)
+Y_test = to_categorical(Y_test)
+
 X_train = X_train.values
 X_val = X_val.values
+X_test = X_test.values
 
 # %%
 
@@ -70,18 +77,28 @@ history = modelDNN.fit(X_train, Y_train,
 # %%
 modelDNN.evaluate(X_train, Y_train)
 modelDNN.evaluate(X_val, Y_val)
+modelDNN.evaluate(X_test, Y_test)
 
 pred_train = modelDNN.predict_classes(X_train)
 pred_val = modelDNN.predict_classes(X_val)
+pred_test = modelDNN.predict_classes(X_test)
 
 cm0 = confusion_matrix(np.argmax(Y_train, axis=1), pred_train)
 fig0 = plt.figure()
 sns.heatmap(cm0, annot=True)
+plt.savefig('./data/charts/DNN NoMod Train CM.png')
 plt.show()
 
 cm1 = confusion_matrix(np.argmax(Y_val, axis=1), pred_val)
 fig1 = plt.figure()
 sns.heatmap(cm1, annot=True)
+plt.savefig('./data/charts/DNN NoMod Val CM.png')
+plt.show()
+
+cm2 = confusion_matrix(np.argmax(Y_val, axis=1), pred_val)
+fig2 = plt.figure()
+sns.heatmap(cm2, annot=True)
+plt.savefig('./data/charts/DNN NoMod Test CM.png')
 plt.show()
 
 # %%
