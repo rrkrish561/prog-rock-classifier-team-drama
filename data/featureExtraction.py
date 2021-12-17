@@ -114,7 +114,7 @@ def extract_features(fname, ext):
             FEATURE_NAMES.append(f'Mean Spectral Contrast {i+1}')
 
     FEATURE_NAMES_INSERTED = True
-    print(FEATURE_NAMES)
+    # print(FEATURE_NAMES)
     return features
 
 
@@ -147,13 +147,19 @@ def make_features(save_features=False, X_name='X', y_name='y'):
     X = []
     y = []
 
-    path = './CIS4930fa21_training_set/Progressive_Rock_Songs'
+    # path = './CIS4930fa21_training_set/Progressive_Rock_Songs'
+    # X, y = add_data(path, 1, X, y)
+
+    # path = './CIS4930fa21_training_set/Not_Progressive_Rock/Other_Songs'
+    # X, y = add_data(path, 0, X, y)
+
+    # path = './CIS4930fa21_training_set/Not_Progressive_Rock/Top_Of_The_Pops'
+    # X, y = add_data(path, 0, X, y)
+
+    path = './CIS4930fa21_test_set/Progressive_Rock_Songs'
     X, y = add_data(path, 1, X, y)
 
-    path = './CIS4930fa21_training_set/Not_Progressive_Rock/Other_Songs'
-    X, y = add_data(path, 0, X, y)
-
-    path = './CIS4930fa21_training_set/Not_Progressive_Rock/Top_Of_The_Pops'
+    path = './CIS4930fa21_test_set/Not_Progressive_Rock'
     X, y = add_data(path, 0, X, y)
 
     if save_features:
@@ -176,7 +182,7 @@ def make_features(save_features=False, X_name='X', y_name='y'):
 
 if __name__ == '__main__':
     t1 = time.time()
-    X, y = make_features(save_features=True)
+    X, y = make_features(save_features=True, X_name='X_test', y_name='y_test')
     t2 = time.time()
     print()
     print(f'Collecting features took {t2 - t1} seconds')
