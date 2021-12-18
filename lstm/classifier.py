@@ -110,7 +110,7 @@ model = keras.Sequential(
         layers.Dense(1024),
         layers.Dropout(0.5),
         layers.Dense(256),
-        # layers.Dropout(0.1),
+        layers.Dropout(0.1),
         layers.Dense(1, activation="sigmoid"),
     ]
 )
